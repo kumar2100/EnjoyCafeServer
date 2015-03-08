@@ -1,0 +1,155 @@
+Collect payment : Link from the admin screen gives you the Login Logout payment Details page:
+
+This page list work_id, user_name, user_status,
+Having Buttons to "Add Walk in Sales"
+
+"Add Sales"
+"Pay Cash"
+
+"Pay Cash" Button will take you to the "Payment Details" page
+
+Payment Details page should bring the details for final billing
+
+Sample Billing:
+Office Name: JaySun Cafe Centre
+---------------------------------------------------------------------------------------------
+Mr.Ram, 
+Date:
+Work ID:
+Bill ID:
+----------------------------------------------------------------------------------------------
+Item No			Item Details	Unit Price		Quntity				Amount
+1				Internet		30 per Hour		(Bill hour 15min)	15
+2				Printing		3					3			 	9
+3				snacks			5					2				10
+----------------------------------------------------------------------------------------------
+													Total			34
+											Service Charge			 0	
+													Discount		 4
+													------------------------------------------	
+													Total Pay		30
+----------------------------------------------------------------------------------------------
+						Thank You Visit Again
+
+
+Table: Bill_All_Items_Purchase
+
+Facilities required:
+Bill can be generated at any time after logout of the customer
+
+1) Add sales to customer can be done during the working or browsing
+2) All the items consumed need to be recorded in Bill_All_Items (current table name: logout_bill_other_sales)
+3) bill_id, work_id, will be same for the customer consumed items, so that we can generate the bill at any time.
+
+item_Id
+bill_id
+item_details
+item_cost_per_unit
+item_quantity
+item_amount 
+item_brand
+----------------------------------------------------------------------------------------------------------
+
+
+Bill_Total_To_Customer    (Current table Name: Login_Logout_payment)
+
+bill_id (equivalent to order_id of order tables): Auto-generated and working
+work_id
+user_name
+bill_time (hours:min:seconds)
+bill_netuse_calculated (need to be updated when logingout)
+bill_total_products (other items purchased like printing, snacks, etc.,)
+bill_discount (any discount applied)
+bill_service_tax
+bill_paid
+bill_pay_status (Life cycle starts with working, after_logout goes to tracking, then after payment "paid" (FULL-PAID, PART-PAID, USER-BUYING, CANCELLED, TRACKING)
+bill_balance (added on 15-sep-2014)
+bill_cancel_detail (added on 15-sep-2014)
+
+
+*bill_total_other_products (other items purchased like printing, snacks, etc.,)
+Total amount of all other items purchased or used by the customer is placed here,
+Usually this will be zero for the browsing only customer.
+Browsing may reduce in th future as coming with tabs and mobiles, but other services are used more like scanning, printing.
+
+*bill_pay_status : may be FULL PAID, PART PAID, USER-BUYING, CANCELLED
+
+*bill_cancel_detail :Happen during testing, cancel for friend/owner/staff, system failure, customer-moved
+
+
+
+------------------------------------------------------------------------------------------------------------
+Currently recording the login time, logout time, Auto generating the work_id, recording the 
+business logic calculated billing hours (bill_time)
+user_status: working or logout
+user_type: walkin or customer or staff or admin
+
+Life Cycle: 
+*Generating the work_id when the user logging into the system to browse or
+walk in customer for printing or other purchase, 
+
+*bill_id need to be generated, 
+
+Login_Logout_Time
+
+work_id
+user_name
+start_time
+end_time
+bill_time
+user_status (Oher way it is the work_status)
+user_type
+user_mobile
+user_cancel_detail (when cancelling the work, need to update)
+
+------------------------------------------------------------------------------------------------------------
+1)
+Login.jsp ---> Login_process.jsp ---> Login.java ---> work_welcome.jsp
+a) Login.java
+	*authenticating and validating the user information with password
+	*generating the work_id for the user with start time, updating user_status as working.
+	
+
+2)
+work_welcome.jsp ---> Logout --> Login_process.jsp --> Login.java ---> user_payment2.jsp
+	*Login_proces.jsp calling the different methods in Login.java and forwarding to respective jsp pages.
+	*when user logout the Login.java recording the end time, calculating the total usage time as bill hours
+	and updating the user_status to logout.
+	
+
+
+
+-------------------------------------------------------------------------------------------------------------------
+Admin Module:
+
+Collect Payment (Link) to be used for the staff managing the center (admin_collect_payment.jsp)
+
+	1. List the users working or logout of the system.
+	2. Need to place button for "Logout" from this page  --->admin_to_do_user_logout.jsp
+			a)Logout need to update the table: Login_Logout_Time and change the user_status to "logout_collect_cash"
+			b)And to update the table Bill_Total_To_Customer (Current table Name: Login_Logout_payment)
+			
+	3. "Pay Cash" button will take to the Payment Details page.(admin_pay_cash.jsp)
+	4. "Add Sales" currently displaying need to be moved to Payment Details page
+	5. 
+
+work_welcome.jsp: Future
+	1. will display the facility to order snacks or other items from the page.
+	
+----Project--Resources---------------------------------------------------------------------------------------------------------------	
+ 
+ DBMS Location: D:\NetBeansProjects\EnjoyCafeServer\resources    
+ ODBC Name:          "jdbc:odbc:EnjoyODBC";
+        
+ -------------------------------------------------
+ current Bugs:
+ 
+ bill hours : 1:31:1869:4:0
+ cal amount : 1860
+
+ bill hours : 0:3:231:15:0
+ cal amount : 225
+
+
+ Need to verify
+ 

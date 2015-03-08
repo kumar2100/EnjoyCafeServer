@@ -1,0 +1,533 @@
+DBMS Location ; D:\NetBeansProjects\EnjoyCafeServer\resources
+
+
+
+-----------------------------------------------------------------Start -Login_Process.jsp-----------------------------
+<%--
+    Document   : process2
+    Created on : Aug 25, 2013, 12:34:28 AM
+    Author     : Admin
+--%>
+
+<%@ page import="java.util.*" %>
+<jsp:useBean id="idHandler" class="enjoycafe.Login" scope="session" >
+    <jsp:setProperty name="idHandler" property="*" />
+</jsp:useBean>
+
+<%
+    String uaction = request.getParameter("uaction");
+    //Need to set becos user set in session getting the old value
+    
+    
+    //The following validation we can do it with javascript validation at client side.
+    boolean togo_validate=false;
+    if(request.getParameter("username")!=null  && request.getParameter("password")!=null){
+    if(!request.getParameter("username").isEmpty() && !request.getParameter("password").isEmpty() ){    
+    togo_validate=true;
+    }
+    }
+    
+    idHandler.setUaction(uaction);
+    if((request.getParameter("work_id")!=null)){
+        idHandler.setWork_id(Integer.parseInt(request.getParameter("work_id")));
+    } 
+    System.out.println("***********FROM LOGIN PROCESS request.getParameter(uaction)  "+request.getParameter("uaction"));
+    
+    if(togo_validate){
+    if (idHandler.validate(session)) {
+    System.out.println("***********FROM LOGIN PROCESS request.getParameter(uaction)  "+request.getParameter("uaction"));
+    System.out.println("***********FROM LOGIN PROCESS idHandler.getUaction()  "+idHandler.getUaction());
+        if (uaction.equalsIgnoreCase("logout")) {
+            //session.invalidate();
+            session.getId();
+           %>
+           <jsp:forward page="user_payment2.jsp"/>
+           <%
+        }
+%>
+
+
+The Work ID from JSTL get Property:     <jsp:getProperty name="idHandler" property="work_id"/>
+   <% System.out.println("***********FROM LOGIN PROCESS test idHandler.getWork_id():  "+idHandler.getWork_id());  %> 
+   <% System.out.println("***********FROM LOGIN PROCESS test idHandler.getUsername():  "+idHandler.getUsername());  %> 
+      <% System.out.println("***********FROM LOGIN PROCESS testid : "+session.getAttribute("testid"));  %> 
+      <% System.out.println("***********FROM LOGIN PROCESS  work_id: "+session.getAttribute("work_id"));  %> 
+    
+<jsp:forward page="work_welcome.jsp"/>
+
+
+<%} else {
+%>
+<jsp:forward page="Retry.jsp"/>
+<%    }
+    
+%>
+
+<%} else {
+%>
+<jsp:forward page="Retry.jsp"/>
+<%    }
+    
+%>
+
+
+
+-----------------------------------------------------------------end -Login_Process.jsp-----------------------------
+
+scenario 1:
+when the user loged in using the correct user name and password, it got stored in the session and the user is able 
+to login even with out entering the user and passsword.
+The above case is prevented by placing the code:
+
+    //The following validation we can do it with javascript validation at client side.
+    boolean togo_validate=false;
+    if(request.getParameter("username")!=null  && request.getParameter("password")!=null){
+    if(!request.getParameter("username").isEmpty() && !request.getParameter("password").isEmpty() ){    
+    togo_validate=true;
+    }
+    }
+    
+    idHandler.setUaction(uaction);
+
+--------------------------
+scenario 2:
+
+When the user is not entering the user and password, the user is getting the retry.jsp
+Even after entering the user and pass in the retry.jsp, the user is not able to login, 
+This might be because the old value got stored in the session.
+
+<% session.invalidate(); %>  After placing this the above problem got solved.
+
+
+
+----------------------------------------------------------------start retry.jsp-----------------------------
+<%@page contentType="text/html" pageEncoding="UTF-8"%>
+<% session.invalidate(); %>
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <title>JSP Page</title>
+    </head>
+    <body background="/EnjoyCafeServer/docs/images/INDEX.JPG">
+    <br>
+ <center><h3>Please enter your user name and password</h3></center>
+ <br>
+ <br>
+ 
+ <form  action="/EnjoyCafeServer/jsp/Login_Process.jsp"   method = "post" >
+ 
+ <center>username</center> <center><input type = "text" name= "username"></center>
+ <center>password</center> <center><input type = "password" name = "password"></center>
+ <input type = "hidden" name = "uaction" value="login">
+
+<center><h3><%  out.write("WRONG User OR Password RE-TRY"); %></h3></center>
+
+ <center><input type="submit" name="Submit" value="Login"></center>
+
+ </form>
+ 
+
+    </body>
+</html>
+
+----------------------------------------------------------------end retry.jsp-----------------------------
+
+
+
+
+---------------------------------------------------------------Login.java------------------
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package enjoycafe;
+
+/**
+ *
+ * @author Admin
+ */
+import enjoycafe.services.BillingHourServices;
+import java.io.IOException;
+import java.sql.*;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import javax.servlet.ServletConfig;
+import org.apache.log4j.Logger;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+public class Login {
+
+    Login L1;
+    private String username = "";
+    private String password = "";
+    private int work_id;
+    private int payment_amount;
+    private String uaction = "";
+    private String duration ="";
+
+    public void setDuration(String duration) {
+        this.duration = duration;
+    }
+
+    public String getDuration() {
+        return this.duration;
+    }
+    
+    
+    public void setPayment_amount(int amt) {
+        this.payment_amount = amt;
+    }
+
+    public int getPayment_amount() {
+        return this.payment_amount;
+    }
+
+    public void setUaction(String uaction) {
+        this.uaction = uaction;
+    }
+
+    public String getUaction() {
+        return this.uaction;
+    }
+
+    public Login() {
+    }
+// For bringing the use of logging
+    private static org.apache.log4j.Logger log = Logger
+            .getLogger(Login.class);
+
+// For bringing the use of logging
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getUsername() {
+        return this.username;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public int getWork_id() {
+        return this.work_id;
+    }
+
+    public void setWork_id(int id) {
+        System.out.println("CALLED : setWork_id(int id)" + id);
+        this.work_id = id;
+    }
+
+    // Login L1 = new Login();
+    public boolean validate(HttpSession session) throws ParseException {
+
+        boolean validation = false;
+        L1 = new Login();
+
+        System.out.println("username:  " + this.username);
+        System.out.println("password:  " + this.password);
+        System.out.println("work_id:  " + this.work_id);
+        System.out.println("******uaction :" + uaction);
+
+        log.debug("username" + username);
+        log.debug("password" + password);
+
+
+        if (uaction.equals("logout")) {
+            if (((session.getAttribute("user")) != null) || (this.username) != null) {
+                //Login L2 = (Login) session.getAttribute("user");
+                //System.out.println("******WORK-ID update request :" + L2.getWork_id());
+                //L1.recordtimeLogout(L2.getWork_id());
+                System.out.println("******WORK-ID update request :" + this.getWork_id());
+                L1.recordtimeLogout(this.getWork_id());
+                System.out.println("***LOGIN.JAVA***L1.getPayment_amount :" + L1.getPayment_amount()); //this is coming
+                System.out.println("***LOGIN.JAVA***L1.getDuration :" + L1.getDuration()); //this is coming
+            
+                //L1.setPayment_amount(L1.getPayment_amount());
+                session.setAttribute("payment_amount", L1.getPayment_amount());
+                session.setAttribute("duration", L1.getDuration());
+  
+                System.out.println("***LOGIN.JAVA***getPayment_amount :" + this.getPayment_amount()); //this ans 0
+                return true;
+            } else {
+
+                System.out.println("******WORK ID ERROR-------:" + session.getAttribute("user"));
+
+                return false;
+            }
+
+        }
+
+        validation = L1.authenticate(username, password);
+        if (validation) {
+            L1.recordtime(username, password);
+
+            
+            //session =request.getSession();
+            session.setAttribute("user", L1);
+            System.out.println("Loging.java : L1.getUsername: " + L1.getUsername());
+            session.setAttribute("testid", "99999");
+            session.setAttribute("work_id", L1.getWork_id());
+            //config.getServletContext().setAttribute("testid", "99999");
+        }
+        return validation;
+    }
+
+    public boolean authenticate(String username2, String password2) {
+        String query = "select * from Login_Admin";
+        String DbUserName = "";
+        String DbPassword = "";
+        String finalUser = "";
+        try {
+            System.out.println("Loading the Driver");
+            log.debug("Loading the Driver");
+            //**START-----This is for connection to Access**//
+            Class.forName("sun.jdbc.odbc.JdbcOdbcDriver");
+            String url = "jdbc:odbc:EnjoyODBC";
+            Connection con = DriverManager.getConnection(url, "", "");
+            System.out.println("Connecting to the Server");
+            Statement stmt = con.createStatement();
+            ResultSet rst = stmt.executeQuery(query);
+            while (rst.next()) {
+                DbUserName = rst.getString("Username");
+                DbPassword = rst.getString("Password");
+                if (username2.equals(DbUserName) && password2.equals(DbPassword)) {
+                    return true;
+                    //break;
+                }
+            }
+            return false;
+            //return true
+            // enable the above line to test without validating password.
+
+        } catch (Exception e) {
+            System.out.println("" + e);
+            return false;
+        }
+    }
+
+    public void recordtime(String username2, String password2) throws ParseException {
+        //
+        //Test Data    
+
+        Date d1 = new Date(System.currentTimeMillis());
+        Time t1 = new Time(System.currentTimeMillis());
+
+        //String juser_name = "ktest";
+        String juser_name = username2;
+        //String jstart_time = DateFormat.getTimeInstance().format(d1);
+
+        long time = System.currentTimeMillis();
+        Timestamp jstart_time = new Timestamp(time);
+        SimpleDateFormat SD_format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        //String fechaStr = "2013-10-10 10:49:29.10000";  
+        String fetch_starttime = jstart_time.toString();
+        java.util.Date fechaNueva = SD_format.parse(fetch_starttime);
+        //System.out.println("Time Formating Test :"+SD_format.SD_format(fechaNueva));
+        Timestamp access_format_start_time = Timestamp.valueOf(SD_format.format(fechaNueva));
+
+        String access_format_string = SD_format.format(fechaNueva);
+        System.out.println("Coming inside the access_format_start_time :" + access_format_start_time);
+        System.out.println("Coming inside the access_format_string :" + access_format_string);
+
+        long l1 = d1.getTime();
+        Long l2 = l1;
+        //String jend_time =l2.toString();
+        //String jend_time = "0.00";
+        String jbill_time = "Working ";
+
+        try {
+
+            Class.forName("sun.jdbc.odbc.JdbcOdbcDriver");
+            String url = "jdbc:odbc:EnjoyODBC";
+            Connection connection = null;
+            PreparedStatement pstatement = null;
+            PreparedStatement pstatement2 = null;
+            connection = DriverManager.getConnection(url, "", "");
+            System.out.println("Coming inside the RECORD TIME code 1");
+            //String queryString = "INSERT INTO Login_Logout_Time(user_name, start_time,end_time,bill_time) VALUES (?, ?, ?,?)";
+            String queryString = "INSERT INTO Login_Logout_Time(user_name, start_time,bill_time) VALUES (?, ?, ?)";
+            pstatement = connection.prepareStatement(queryString);
+            pstatement.setString(1, juser_name);
+            //pstatement.setString(2, jstart_time);
+            //pstatement.setString(3, jend_time);
+            //pstatement.setTimestamp(2, jstart_time);
+            pstatement.setTimestamp(2, access_format_start_time);
+
+            //pstatement.setString(3, jend_time);
+            pstatement.setString(3, jbill_time);
+            System.out.println("Coming inside the RECORD TIME code 2");
+
+            pstatement.executeUpdate();
+
+            Statement stmt2 = connection.createStatement();
+            //select workid from Login_Logout_Time where user_name='ktest' AND start_time='1:09:19 PM';
+            //String query2 = "select * from Login_Logout_Time where user_name='" + juser_name + "' AND start_time=#" + jstart_time + "#";
+            String query2 = "select * from Login_Logout_Time where user_name='" + juser_name + "' AND start_time=#" + access_format_string + "#";
+
+            //String u_query = "update Employee_Details set Emp_Type='"+emp_type+"',Emp_Name='"+emp_name+"',City='"+emp_city+"',Phone_Home="+emp_phone+" where Emp_Id="+num+"";            
+
+            System.out.println("QUERRY TO GET WORKid " + query2);
+
+            ResultSet rs2 = stmt2.executeQuery(query2);
+            int genid = 0;
+            while (rs2.next()) {
+                genid = rs2.getInt(1);
+                System.out.println("WORK ID GENERATED " + genid);
+                //this.setWork_id(genid);
+
+                this.setWork_id(genid);
+                this.setUsername(juser_name);
+                //this.setUsername(juser_name);
+                //HttpSession session = request..getSession();
+                //session.setAttribute("work_id",genid);
+                //this.setMyObject(request);
+            }
+            System.out.println("Coming inside the RECORD TIME COMPLETED 2");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        //
+    }
+
+    public void recordtimeLogout(int wid) throws ParseException {
+
+        BillingHourServices bhourservice = new BillingHourServices();
+        int w_id = wid;
+        Date d1 = new Date(System.currentTimeMillis());
+        Time t1 = new Time(System.currentTimeMillis());
+        //String juser_name = username2;
+        long l1 = d1.getTime();
+        Long l2 = l1;
+        //String jend_time =l2.toString();
+        // String jend_time = DateFormat.getTimeInstance().format(d1);
+        String jbill_time = "1 hour";
+
+        long time = System.currentTimeMillis();
+        Timestamp jend_time = new Timestamp(time);
+        Timestamp jstart_time = new Timestamp(time);
+
+        //work to do to enter timestamp with access table
+        SimpleDateFormat SD_format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        //String fechaStr = "2013-10-10 10:49:29.10000";  
+        String fetch_endtime = jend_time.toString();
+        java.util.Date fechaNueva = SD_format.parse(fetch_endtime);
+        //System.out.println("Time Formating Test :"+SD_format.SD_format(fechaNueva));
+        Timestamp access_format_end_time = Timestamp.valueOf(SD_format.format(fechaNueva));
+
+        String access_format_endtime = SD_format.format(fechaNueva);
+
+
+        try {
+            Class.forName("sun.jdbc.odbc.JdbcOdbcDriver");
+            String url = "jdbc:odbc:EnjoyODBC";
+            Connection connection = null;
+            connection = DriverManager.getConnection(url, "", "");
+            System.out.println("Coming inside the RECORD TIME Logout code 1");
+
+            Statement stmt2 = connection.createStatement();
+            //select workid from Login_Logout_Time where user_name='ktest' AND start_time='1:09:19 PM';
+            //String query2 = "select * from Login_Logout_Time where user_name='" + juser_name + "' AND start_time='" + jstart_time + "'";
+            String query2 = "select start_time from Login_Logout_Time where workid=" + w_id + "";
+            //String u_query = "update Login_Logout_Time set end_time='" + jend_time + "' where workid=" + w_id + "";
+            //String u_query = "update Login_Logout_Time set end_time=#" + jend_time + "# where workid=" + w_id + "";
+            String u_query = "update Login_Logout_Time set end_time=#" + access_format_endtime + "# where workid=" + w_id + "";
+
+            //String u_bill_time = "update Login_Logout_Time set jbill_time=#" + access_format_endtime + "# where workid=" + w_id + "";
+
+
+            ResultSet rs2 = stmt2.executeQuery(query2);
+            Date starttime;
+            while (rs2.next()) {
+                //starttime = (Date)rs2.getDate(1);
+                //starttime = (Date)rs2.getDate(1);
+                //System.out.println("start_time ID RECORDED FOR USER " + starttime);
+                //System.out.println("start_time ID RECORDED FOR USER " + rs2.getObject(1));
+                //System.out.println("start_time ID RECORDED FOR USER " + rs2.getTimestamp(1));
+                jstart_time = rs2.getTimestamp(1);
+
+                //this.setWork_id(genid);
+
+                //long billtime= (d1.getTime()-rs2.getDate(1).getTime());
+                //long seconds = billtime/1000;
+                //long hours = seconds/60;
+
+                //System.out.println("Bill Time Hours " + hours+" : Seconds :"+seconds);
+
+            }
+
+            String billtime = bhourservice.computeBillingHour(jstart_time, access_format_end_time);
+            int billmin = (int) bhourservice.computeBillingMinutes(jstart_time, access_format_end_time);
+            
+            int amount = bhourservice.BillAmount(billmin);
+            this.setPayment_amount(amount);
+            
+            System.out.println("###### ******* Billing setPayment_amount: " + amount);
+
+            System.out.println("Billing Hours for StartTime" + jstart_time + " and End Time : " + access_format_end_time);
+
+            System.out.println("Billing Hours in Days:Hours:Minutes:Seconds:Milliseconds : " + billtime);
+            
+            this.setDuration(billtime);
+            String u_bill_time_qry = "update Login_Logout_Time set bill_time='" + billtime + "' where workid=" + w_id + "";
+
+
+            System.out.println("QUERRY TO update WORKid " + u_query);
+            int updatecount = stmt2.executeUpdate(u_query);
+            System.out.println("Logout Update records: " + updatecount);
+
+            System.out.println("QUERRY TO update billhour " + u_bill_time_qry);
+            int billupdate = stmt2.executeUpdate(u_bill_time_qry);
+            System.out.println("Bill Update records: " + billupdate);
+
+                      
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        //
+    }
+}
+
+---------------------------------------------------------------Login.java------------------
+
+13-Sep-2014
+
+Planning:
+
+User Status Monitor: "admin_user_monitor.jsp" List of users currently working or using the resources
+(internet, printer and other facility) in the particular office.
+
+Table : Login_Logout_Time
+workid
+user_name
+start_time
+end_time
+bill_time(currently storing the calculated hours + user status)
+user_status(need to place new column, track the status, as WORKING, LOGOUT)
+
+need to place : payment details: PAID
+need to cleanupp: working status durig the start of the day to STATUS_PENDING for the status which is not changed due 
+to system failure or client browser closed with out log  out.
+
+
+
+
+
+Report:
+* need to take for particular day. (to give total users and total bill hours)
+* report for the list of users
+* report for the list of guest
+
+User Status:
+working
+logout_collect_cash
+logout_cash_paid
+logout_cash_pending
+

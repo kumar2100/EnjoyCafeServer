@@ -1,0 +1,6 @@
+Java Program to get the server ip address in the lan network
+
+
+-Program to close entire window desktop
+
+-program to communicate to client app from http server, to shutdown the system remotely from the server.
